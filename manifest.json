@@ -3,8 +3,8 @@
   "short_name": "FX Engine",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f3f4f6",
-  "theme_color": "#1e40af",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/2990/2990194.png",
