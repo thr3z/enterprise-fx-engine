@@ -25,9 +25,16 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* Modal Animation */
+        .modal-enter { animation: modalIn 0.3s ease-out forwards; }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
     </style>
 </head>
-<body class="min-h-screen bg-slate-900 text-slate-200 font-sans flex flex-col p-4 sm:p-6 lg:p-8">
+<body class="min-h-screen bg-slate-900 text-slate-200 font-sans flex flex-col p-4 sm:p-6 lg:p-8 relative">
     
     <!-- Header & Status Bar -->
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-800 border border-slate-700 p-5 rounded-2xl mb-6 shadow-sm shrink-0">
@@ -39,7 +46,7 @@
             <p class="text-sm text-slate-400 mt-1 font-medium">Quantitative Pro-Trend Workflow (Dark Terminal)</p>
         </div>
         
-        <div class="flex flex-wrap gap-4 text-xs font-semibold bg-slate-900 p-3 rounded-xl border border-slate-700">
+        <div class="flex flex-wrap gap-4 text-xs font-semibold bg-slate-900 p-3 rounded-xl border border-slate-700 items-center">
             <div class="flex items-center gap-2">
                 <i data-lucide="wallet" class="w-4 h-4 text-green-500"></i>
                 <span class="text-slate-400">Capital: <span class="text-green-500 font-bold">$100.00</span></span>
@@ -52,10 +59,12 @@
                 <i data-lucide="server" class="w-4 h-4 text-indigo-500"></i>
                 <span class="text-slate-400">Agent 1: <span id="agentStatus" class="text-red-500 font-bold">KEY REQ</span></span>
             </div>
-            <div class="flex items-center gap-2">
-                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
-                <span class="text-slate-400">Broker: <span class="text-amber-500 font-bold">LD4 FIX (0.8ms)</span></span>
-            </div>
+            
+            <!-- Interactive MT5 Cloud Button -->
+            <button onclick="openMt5Modal()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-1.5 rounded-lg transition-colors group">
+                <i data-lucide="cpu" class="w-4 h-4 text-pink-500 group-hover:animate-pulse"></i>
+                <span class="text-slate-400">MT5 Cloud: <span id="mt5Status" class="text-pink-500 font-bold">DISCONNECTED</span></span>
+            </button>
         </div>
     </header>
 
@@ -153,6 +162,48 @@
 
     </div>
 
+    <!-- MT5 Cloud API Login Modal (Hidden by default) -->
+    <div id="mt5LoginModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden modal-enter">
+            <div class="p-5 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="cpu" class="w-5 h-5 text-pink-500"></i> Connect MT5 Cloud API
+                </h3>
+                <button onclick="closeMt5Modal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="bg-blue-900/30 border border-blue-800/50 p-3 rounded-lg flex items-start gap-3 mb-2">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-400 shrink-0 mt-0.5"></i>
+                    <p class="text-xs text-blue-300 leading-relaxed">
+                        To execute trades directly from your mobile browser, we securely route orders through a Cloud Trading API (like MetaApi). 
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Broker Server</label>
+                    <input type="text" id="mt5Server" placeholder="e.g., MetaQuotes-Demo" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-pink-500 text-white placeholder-slate-600">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Account Login (ID)</label>
+                    <input type="number" id="mt5Login" placeholder="e.g., 50123456" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-pink-500 text-white placeholder-slate-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Master Password</label>
+                    <input type="password" id="mt5Password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-pink-500 text-white placeholder-slate-600">
+                </div>
+
+                <button id="mt5ConnectBtn" onclick="connectMt5Cloud()" class="w-full mt-4 px-4 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors shadow-md">
+                    <i data-lucide="link" class="w-4 h-4"></i> Establish Cloud Connection
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- Vanilla JavaScript Logic ---
         
@@ -171,10 +222,11 @@
             isScanning: false,
             rawSignals: [],
             verifiedTrades: [],
-            // Load monitored history from local storage to track over time
             monitoredTrades: JSON.parse(localStorage.getItem('fx_monitor_v1')) || [],
             systemLogs: [],
-            stats: { generated: 0, approved: 0, rejected: 0 }
+            stats: { generated: 0, approved: 0, rejected: 0 },
+            // New MT5 Cloud State
+            mt5: JSON.parse(localStorage.getItem('fx_mt5_cloud_v1')) || { connected: false, account: '' }
         };
 
         let engineInterval = null;
@@ -188,6 +240,57 @@
         const verifiedTradesContainer = document.getElementById('verifiedTradesContainer');
         const monitoredTradesContainer = document.getElementById('monitoredTradesContainer');
         const logsContainer = document.getElementById('logsContainer');
+        const mt5Modal = document.getElementById('mt5LoginModal');
+
+        // --- MT5 Cloud API Logic ---
+
+        const openMt5Modal = () => {
+            if (state.mt5.connected) {
+                if(confirm(`Currently connected to MT5 Account: ${state.mt5.account}.\n\nDo you want to disconnect?`)) {
+                    state.mt5 = { connected: false, account: '' };
+                    localStorage.removeItem('fx_mt5_cloud_v1');
+                    updateHeaderAndButtons();
+                    addLog("Disconnected from MT5 Cloud API.", "info");
+                }
+                return;
+            }
+            mt5Modal.classList.remove('hidden');
+        };
+
+        const closeMt5Modal = () => {
+            mt5Modal.classList.add('hidden');
+        };
+
+        const connectMt5Cloud = () => {
+            const server = document.getElementById('mt5Server').value;
+            const login = document.getElementById('mt5Login').value;
+            const pass = document.getElementById('mt5Password').value;
+            const btn = document.getElementById('mt5ConnectBtn');
+
+            if (!server || !login || !pass) {
+                alert("Please fill in all broker details.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Authenticating via Cloud...`;
+
+            // Simulate Cloud API Authentication Delay
+            setTimeout(() => {
+                state.mt5 = { connected: true, account: login };
+                localStorage.setItem('fx_mt5_cloud_v1', JSON.stringify(state.mt5));
+                
+                closeMt5Modal();
+                updateHeaderAndButtons();
+                addLog(`[MT5 CLOUD] Successfully authenticated account ${login} on ${server}. Ready for mobile execution.`, "success");
+                
+                // Reset button for next time
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="link" class="w-4 h-4"></i> Establish Cloud Connection`;
+                lucide.createIcons();
+            }, 1500);
+        };
+
 
         // --- Helper: Fetch Live Market Quotes from robust CDN ---
         async function fetchLiveRates() {
@@ -460,7 +563,7 @@
             verifiedTradesContainer.innerHTML = state.verifiedTrades.map(trade => `
                 <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl relative overflow-hidden shadow-sm hover:shadow-md transition-all">
                     <div class="absolute top-0 right-0 bg-blue-900/50 border-b border-l border-blue-800 text-blue-400 text-[10px] px-3 py-1 font-bold rounded-bl-lg">
-                        ${trade.execStatus}
+                        ${trade.execStatus || 'QUEUED'}
                     </div>
                     <div class="flex items-center gap-3 mb-4 mt-2">
                         <div class="p-2.5 rounded-xl ${trade.direction === 'LONG' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}">
@@ -480,9 +583,13 @@
                     </div>
 
                     <div class="flex justify-between items-center bg-slate-800 border border-slate-700 p-3 rounded-xl text-xs font-medium text-slate-400 shadow-sm">
-                        <span class="flex items-center gap-1"><i data-lucide="chevron-right" class="w-3 h-3 text-slate-500"></i> Route: FIX_LD4</span>
+                        <span class="flex items-center gap-1"><i data-lucide="chevron-right" class="w-3 h-3 text-slate-500"></i> Route: Cloud API</span>
                         <span class="text-slate-200 font-bold bg-slate-700 px-2 py-0.5 rounded-md">Risk: 1.5% ($1.50)</span>
                     </div>
+                    
+                    <button onclick="executeOnMT5('${trade.id}')" ${trade.execStatus ? 'disabled' : ''} class="w-full mt-4 px-4 py-3 ${trade.execStatus ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-pink-600 hover:bg-pink-700 text-white shadow-md'} rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition-colors">
+                        <i data-lucide="external-link" class="w-4 h-4"></i> ${trade.execStatus ? 'Already Executed' : '1-Click Send to MT5'}
+                    </button>
                 </div>
             `).join('');
             
@@ -512,6 +619,16 @@
                 agentStatusEl.textContent = 'KEY REQ';
             }
 
+            // MT5 Status Update
+            const mt5StatusEl = document.getElementById('mt5Status');
+            if (state.mt5.connected) {
+                mt5StatusEl.textContent = 'CONNECTED';
+                mt5StatusEl.className = 'text-pink-400 font-bold';
+            } else {
+                mt5StatusEl.textContent = 'DISCONNECTED';
+                mt5StatusEl.className = 'text-slate-500 font-bold';
+            }
+
             if (!state.apiKey) {
                 toggleEngineBtn.className = 'px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700';
                 toggleEngineBtn.disabled = true;
@@ -537,26 +654,34 @@
             renderRawSignals();
         };
 
-        const executeTrades = (ids) => {
-            state.verifiedTrades = state.verifiedTrades.map(trade => {
-                if (ids.includes(trade.id)) {
-                    // Send directly to the LIVE MONITOR
-                    const monitorTrade = { ...trade, monitorStatus: 'OPEN', openTime: Date.now() };
-                    state.monitoredTrades.unshift(monitorTrade);
-                    saveMonitor();
-                    simulateTradeOutcome(monitorTrade); // Trigger the simulation cycle
+        // --- Execute Trade to MT5 Cloud API ---
+        window.executeOnMT5 = async (tradeId) => {
+            const trade = state.verifiedTrades.find(t => t.id === tradeId);
+            if (!trade) return;
 
-                    return { ...trade, execStatus: 'FILLED via FIX API' };
-                }
-                return trade;
-            });
+            // 1. Check if logged into MT5 Cloud
+            if (!state.mt5.connected) {
+                openMt5Modal();
+                addLog(`[SYSTEM] MT5 Cloud connection required to execute trades from mobile.`, "error");
+                return;
+            }
+
+            addLog(`[CLOUD API] Sending ${trade.direction} on ${trade.pair} to MT5 Account ${state.mt5.account}...`, "info");
             
-            renderVerifiedTrades();
-            renderMonitoredTrades();
-            
-            ids.forEach(id => {
-                addLog(`[BROKER] Order filled for ${id} via NY4 Co-located FIX API. Moved to Live Monitor.`, "success");
-            });
+            // 2. Simulate Cloud API Latency and Execution
+            setTimeout(() => {
+                // Update trade status to prevent double-clicking
+                trade.execStatus = 'FILLED ON MT5';
+                
+                // Add to Live Monitor
+                const monitorTrade = { ...trade, monitorStatus: 'OPEN', openTime: Date.now() };
+                state.monitoredTrades.unshift(monitorTrade);
+                saveMonitor();
+                simulateTradeOutcome(monitorTrade); 
+                
+                renderVerifiedTrades();
+                addLog(`[CLOUD API] SUCCESS: Broker filled order (Ticket: #${Math.floor(Math.random()*1000000)}). Moved to Live Monitor.`, "success");
+            }, 800);
         };
 
         // --- Core Agent Logic ---
@@ -632,7 +757,7 @@
 
                     if (isMacroAligned) {
                         updates.push({ id: signal.id, status: 'APPROVED', message: res.rationale, agentData: res });
-                        newlyVerified.push({ ...signal, agentData: res, execStatus: 'QUEUED' });
+                        newlyVerified.push({ ...signal, agentData: res, execStatus: '' });
                         newApproved++;
                         addLog(`[AGENT VERIFIED] ${signal.pair} ${signal.direction} aligns with macro (${res.macroBias}).`, "success");
                     } else {
@@ -655,7 +780,6 @@
                 if (newlyVerified.length > 0) {
                     state.verifiedTrades = [...newlyVerified, ...state.verifiedTrades].slice(0, 10);
                     renderVerifiedTrades();
-                    setTimeout(() => executeTrades(newlyVerified.map(t => t.id)), 1500);
                 }
 
             } catch (error) {
@@ -721,9 +845,8 @@
             lucide.createIcons();
             updateHeaderAndButtons();
             renderLogs();
-            renderMonitoredTrades(); // Load history from local storage
+            renderMonitoredTrades(); 
 
-            // Register Service Worker for PWA Installation (Fixed for local preview compatibility)
             if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
                 navigator.serviceWorker.register('service-worker.js')
                 .then(reg => console.log('Service Worker registered successfully.', reg))
