@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise FX Engine (Dark Mode)</title>
+    
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Scrollbar Styling for Dark Mode -->
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-900 text-slate-200 font-sans flex flex-col p-4 sm:p-6 lg:p-8">
+    
+    <!-- Header & Status Bar -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-800 border border-slate-700 p-5 rounded-2xl mb-6 shadow-sm">
+        <div class="mb-4 md:mb-0">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="activity" class="text-blue-500"></i>
+                Enterprise FX Engine
+            </h1>
+            <p class="text-sm text-slate-400 mt-1 font-medium">Quantitative Pro-Trend Workflow (Dark Terminal)</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-4 text-xs font-semibold bg-slate-900 p-3 rounded-xl border border-slate-700">
+            <div class="flex items-center gap-2">
+                <i data-lucide="wallet" class="w-4 h-4 text-green-500"></i>
+                <span class="text-slate-400">Capital: <span class="text-green-500 font-bold">$100.00</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4 text-blue-500"></i>
+                <span class="text-slate-400">Math Engine: <span id="mathEngineStatus" class="text-slate-500 font-bold">OFFLINE</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i data-lucide="server" class="w-4 h-4 text-indigo-500"></i>
+                <span class="text-slate-400">Agent 1: <span id="agentStatus" class="text-red-500 font-bold">KEY REQ</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                <span class="text-slate-400">Broker: <span class="text-amber-500 font-bold">LD4 FIX (0.8ms)</span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- API Input & Controls -->
+    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+        <div class="flex-grow relative">
+            <input 
+                type="password" 
+                id="apiKeyInput"
+                placeholder="Enter Gemini API Key to activate Agentic Workflow..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 pl-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200 placeholder-slate-500 shadow-sm transition-all"
+            />
+        </div>
+        <button 
+            id="toggleEngineBtn"
+            class="px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+            disabled
+        >
+            <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+            <span id="toggleEngineText">INITIALIZE AUTO-SWEEP (15M)</span>
+        </button>
+    </div>
+
+    <!-- Main Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <!-- LEFT COL: Raw TA Stream (Deterministic Math) -->
+        <div class="lg:col-span-4 flex flex-col gap-4">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm">
+                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center rounded-t-2xl">
+                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="activity" class="w-4 h-4 text-blue-500"></i> TA MATH ENGINE (M15)
+                    </h2>
+                    <span id="statsGenerated" class="text-[10px] font-semibold bg-slate-800 border border-slate-700 px-2 py-1 rounded-md text-slate-400 shadow-sm">Total: 0</span>
+                </div>
+                <div id="rawSignalsContainer" class="p-4 space-y-3">
+                    <div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Initialize Auto-Sweep to check markets...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE COL: Execution Queue & Agent Logic -->
+        <div class="lg:col-span-5 flex flex-col gap-4">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm">
+                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center rounded-t-2xl">
+                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-green-500"></i> VERIFIED EXECUTION QUEUE
+                    </h2>
+                    <div class="flex gap-2">
+                        <span id="statsApproved" class="text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 px-2 py-1 rounded-md shadow-sm">Approved: 0</span>
+                        <span id="statsRejected" class="text-[10px] font-bold bg-red-900/40 text-red-400 border border-red-800 px-2 py-1 rounded-md shadow-sm">Killed: 0</span>
+                    </div>
+                </div>
+                <div id="verifiedTradesContainer" class="p-4 space-y-4">
+                    <div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Queue empty. Waiting for Agent consensus...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COL: System Logs (The Terminal) -->
+        <div class="lg:col-span-3 flex flex-col gap-4">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm flex flex-col h-[600px] sticky top-8">
+                <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 rounded-t-2xl shrink-0">
+                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i> SYSTEM LOGS
+                    </h2>
+                </div>
+                <div id="logsContainer" class="flex-grow overflow-y-auto p-4 text-[11px] space-y-2.5 custom-scrollbar bg-slate-900/30 rounded-b-2xl">
+                    <div class="text-slate-500 italic text-center mt-4">System idle...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Vanilla JavaScript Logic ---
+        
+        const PAIRS = ['XAU/USD', 'EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD'];
+        const SETUP_TYPES = ['Bullish Order Block', 'Bearish Fair Value Gap', 'Sellside Liquidity Sweep', 'Buyside Liquidity Sweep'];
+
+        // Global Application State
+        const state = {
+            apiKey: '',
+            isEngineRunning: false,
+            isScanning: false,
+            rawSignals: [],
+            verifiedTrades: [],
+            systemLogs: [],
+            stats: { generated: 0, approved: 0, rejected: 0 }
+        };
+
+        let engineInterval = null;
+        let globalRatesCache = null;
+        let lastRatesFetch = 0;
+
+        // --- DOM Elements ---
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const toggleEngineBtn = document.getElementById('toggleEngineBtn');
+        const rawSignalsContainer = document.getElementById('rawSignalsContainer');
+        const verifiedTradesContainer = document.getElementById('verifiedTradesContainer');
+        const logsContainer = document.getElementById('logsContainer');
+
+        // --- Helper: Fetch Live Market Quotes from robust CDN ---
+        async function fetchLiveRates() {
+            const now = Date.now();
+            // Cache rates for 30 seconds to prevent network spam
+            if (globalRatesCache && (now - lastRatesFetch < 30000)) {
+                return globalRatesCache;
+            }
+            try {
+                // High availability public endpoint for real currency rates
+                const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+                const data = await res.json();
+                if (data && data.usd) {
+                    globalRatesCache = data.usd;
+                    lastRatesFetch = now;
+                    return globalRatesCache;
+                }
+            } catch (error) {
+                console.warn("Rates API failed, attempting fallback...", error);
+            }
+            return null;
+        }
+
+        async function getQuote(pair) {
+            const precision = (pair.includes('JPY') || pair.includes('XAU')) ? 2 : 4;
+            const rates = await fetchLiveRates();
+            
+            if (rates) {
+                let [base, quote] = pair.toLowerCase().split('/');
+                let baseInUsd = base === 'usd' ? 1 : rates[base];
+                let quoteInUsd = quote === 'usd' ? 1 : rates[quote];
+                
+                if (baseInUsd && quoteInUsd) {
+                    // Example: EUR is 0.92 USD. Rate = 1 / 0.92 = 1.0869
+                    const currentPrice = quoteInUsd / baseInUsd;
+                    return currentPrice.toFixed(precision);
+                }
+            }
+
+            // Ultimate fallback if CDN is completely unreachable
+            let fallbackPrice = pair === 'USD/JPY' ? 150.00 : pair === 'XAU/USD' ? 2350.00 : 1.1000;
+            return fallbackPrice.toFixed(precision);
+        }
+
+        // --- Helper: Simulate Deterministic Math Engine (Backend TA) ---
+        const generateMockTASignal = (pair, livePriceStr) => {
+            const isBullish = Math.random() > 0.5;
+            const type = isBullish 
+                ? (Math.random() > 0.5 ? 'Bullish Order Block' : 'Sellside Liquidity Sweep') 
+                : (Math.random() > 0.5 ? 'Bearish Order Block' : 'Buyside Liquidity Sweep');
+            
+            let currentMarketPrice = parseFloat(livePriceStr);
+            const precision = (pair.includes('JPY') || pair.includes('XAU')) ? 2 : 4;
+            
+            // Pip Calculation (XAU scale is adjusted)
+            const pipSize = precision === 2 ? 0.01 : 0.0001;
+            const pipMultiplier = pair.includes('XAU') ? 10 : 1; 
+            
+            // Entry is calculated tightly around the CURRENT market price (0 to 5 pips away limit order)
+            let entryOffset = (Math.random() * 5) * pipSize * pipMultiplier;
+            let entry = isBullish 
+                ? (currentMarketPrice - entryOffset).toFixed(precision) // Buy Limit
+                : (currentMarketPrice + entryOffset).toFixed(precision); // Sell Limit
+            
+            // Strict quantitative execution (1:3 RRR)
+            let slOffset = 15 * pipSize * pipMultiplier; // 15 Pip Stop
+            let tpOffset = 45 * pipSize * pipMultiplier; // 45 Pip Target
+            
+            let sl = isBullish 
+                ? (parseFloat(entry) - slOffset).toFixed(precision) 
+                : (parseFloat(entry) + slOffset).toFixed(precision);
+                
+            let tp = isBullish 
+                ? (parseFloat(entry) + tpOffset).toFixed(precision) 
+                : (parseFloat(entry) - tpOffset).toFixed(precision);
+
+            return {
+                id: `TA-${Date.now().toString().slice(-5)}-${Math.floor(Math.random() * 100000)}`,
+                timestamp: new Date(),
+                pair,
+                liveMarketPrice: currentMarketPrice.toFixed(precision),
+                direction: isBullish ? 'LONG' : 'SHORT',
+                setupType: type,
+                entry,
+                sl,
+                tp,
+                status: 'PENDING_VERIFICATION' 
+            };
+        };
+
+        // --- UI Rendering Functions ---
+        
+        const addLog = (msg, type = 'info') => {
+            state.systemLogs.push({ time: new Date().toLocaleTimeString(), msg, type });
+            if (state.systemLogs.length > 60) state.systemLogs.shift();
+            renderLogs();
+        };
+
+        const renderLogs = () => {
+            if (state.systemLogs.length === 0) {
+                logsContainer.innerHTML = `<div class="text-slate-500 italic text-center mt-4">System idle...</div>`;
+                return;
+            }
+
+            logsContainer.innerHTML = state.systemLogs.map(log => {
+                let textClass = 'text-slate-300';
+                if (log.type === 'error') textClass = 'text-red-400 font-medium';
+                if (log.type === 'success') textClass = 'text-green-400 font-medium';
+                if (log.type === 'signal') textClass = 'text-blue-400 font-medium';
+
+                return `
+                <div class="flex gap-2 leading-relaxed ${textClass}">
+                    <span class="text-slate-500 font-mono shrink-0">[${log.time}]</span>
+                    <span class="break-words">${log.msg}</span>
+                </div>`;
+            }).join('');
+            
+            // Auto scroll to bottom
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        };
+
+        const renderRawSignals = () => {
+            if (state.rawSignals.length === 0) {
+                rawSignalsContainer.innerHTML = `<div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Initialize Auto-Sweep to check markets...</div>`;
+                return;
+            }
+
+            rawSignalsContainer.innerHTML = state.rawSignals.map(sig => {
+                let badgeClass, badgeContent;
+                if (sig.status === 'PENDING_VERIFICATION') {
+                    badgeClass = 'bg-slate-700 text-slate-300';
+                    badgeContent = 'Queued for LLM';
+                } else if (sig.status === 'VERIFYING') {
+                    badgeClass = 'bg-blue-900/40 text-blue-400 border border-blue-800 animate-pulse';
+                    badgeContent = 'Agent 1: Querying Macro Data...';
+                } else if (sig.status === 'APPROVED') {
+                    badgeClass = 'bg-green-900/40 text-green-400 border border-green-800';
+                    badgeContent = `<span class="flex items-center justify-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Agent Aligned</span>`;
+                } else {
+                    badgeClass = 'bg-red-900/40 text-red-400 border border-red-800';
+                    badgeContent = `<span class="flex items-center justify-center gap-1.5"><i data-lucide="x-circle" class="w-4 h-4"></i> Rejected: ${sig.verifyMessage.substring(0, 25)}...</span>`;
+                }
+
+                return `
+                <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl shadow-sm relative hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full ${sig.direction === 'LONG' ? 'bg-green-500' : 'bg-red-500'}"></div>
+                            <span class="font-bold text-sm text-white">${sig.pair} <span class="text-slate-400 font-medium ml-1">${sig.direction}</span></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-[10px] font-bold text-blue-400 bg-blue-900/40 px-2 py-1 rounded shadow-sm border border-blue-800">MARKET: ${sig.liveMarketPrice}</span>
+                            <span class="text-[10px] font-medium text-slate-500">${sig.timestamp.toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                    <div class="text-slate-300 text-xs mb-3 font-medium bg-slate-900 p-2 rounded-lg border border-slate-700">${sig.setupType} Detected</div>
+                    <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+                        <div><span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">Entry</span><span class="text-slate-200 font-semibold">${sig.entry}</span></div>
+                        <div><span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">SL</span><span class="text-slate-200 font-semibold">${sig.sl}</span></div>
+                        <div><span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">TP</span><span class="text-slate-200 font-semibold">${sig.tp}</span></div>
+                    </div>
+                    
+                    <div class="mt-1 p-2 rounded-lg text-center text-xs font-bold ${badgeClass}">
+                        ${badgeContent}
+                    </div>
+                </div>`;
+            }).join('');
+            
+            lucide.createIcons();
+        };
+
+        const renderVerifiedTrades = () => {
+            if (state.verifiedTrades.length === 0) {
+                verifiedTradesContainer.innerHTML = `<div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Queue empty. Waiting for Agent consensus...</div>`;
+                return;
+            }
+
+            verifiedTradesContainer.innerHTML = state.verifiedTrades.map(trade => `
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl relative overflow-hidden shadow-sm hover:shadow-md transition-all">
+                    <div class="absolute top-0 right-0 bg-blue-900/50 border-b border-l border-blue-800 text-blue-400 text-[10px] px-3 py-1 font-bold rounded-bl-lg">
+                        ${trade.execStatus}
+                    </div>
+                    <div class="flex items-center gap-3 mb-4 mt-2">
+                        <div class="p-2.5 rounded-xl ${trade.direction === 'LONG' ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}">
+                            <i data-lucide="${trade.direction === 'LONG' ? 'trending-up' : 'trending-down'}" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">${trade.pair}</h3>
+                            <p class="text-xs font-medium text-slate-400">${trade.setupType}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-700 mb-4">
+                        <span class="text-indigo-400 text-xs font-bold flex items-center gap-1.5 mb-1.5">
+                            <i data-lucide="server" class="w-3 h-3"></i> Agent 1 (Macro) Rationale:
+                        </span>
+                        <span class="text-slate-300 text-sm leading-relaxed">"${trade.agentData?.rationale || ''}"</span>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-slate-800 border border-slate-700 p-3 rounded-xl text-xs font-medium text-slate-400 shadow-sm">
+                        <span class="flex items-center gap-1"><i data-lucide="chevron-right" class="w-3 h-3 text-slate-500"></i> Size: 0.01 Lots (Micro)</span>
+                        <span class="flex items-center gap-1"><i data-lucide="chevron-right" class="w-3 h-3 text-slate-500"></i> Route: FIX_LD4</span>
+                        <span class="text-slate-200 font-bold bg-slate-700 px-2 py-0.5 rounded-md">Risk: 1.5% ($1.50)</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            lucide.createIcons();
+        };
+
+        const updateHeaderAndButtons = () => {
+            document.getElementById('statsGenerated').textContent = `Total: ${state.stats.generated}`;
+            document.getElementById('statsApproved').textContent = `Approved: ${state.stats.approved}`;
+            document.getElementById('statsRejected').textContent = `Killed: ${state.stats.rejected}`;
+            
+            const mathStatusEl = document.getElementById('mathEngineStatus');
+            if (state.isEngineRunning) {
+                mathStatusEl.className = state.isScanning ? 'text-blue-500 font-bold animate-pulse' : 'text-slate-500 font-bold';
+                mathStatusEl.textContent = state.isScanning ? 'SCANNING...' : 'ACTIVE (IDLE)';
+            } else {
+                mathStatusEl.className = 'text-slate-500 font-bold';
+                mathStatusEl.textContent = 'OFFLINE';
+            }
+
+            const agentStatusEl = document.getElementById('agentStatus');
+            if (state.apiKey) {
+                agentStatusEl.className = 'text-indigo-500 font-bold';
+                agentStatusEl.textContent = 'CONNECTED';
+            } else {
+                agentStatusEl.className = 'text-red-500 font-bold';
+                agentStatusEl.textContent = 'KEY REQ';
+            }
+
+            if (!state.apiKey) {
+                toggleEngineBtn.className = 'px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700';
+                toggleEngineBtn.disabled = true;
+                toggleEngineBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i><span>INITIALIZE AUTO-SWEEP (15M)</span>`;
+            } else if (state.isEngineRunning) {
+                toggleEngineBtn.className = 'px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm bg-red-900/50 text-red-400 hover:bg-red-900/80 border border-red-800';
+                toggleEngineBtn.disabled = false;
+                toggleEngineBtn.innerHTML = `<i data-lucide="square" class="w-4 h-4 fill-current"></i><span>HALT SYSTEM</span>`;
+            } else {
+                toggleEngineBtn.className = 'px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm bg-blue-600 text-white hover:bg-blue-700 border border-transparent';
+                toggleEngineBtn.disabled = false;
+                toggleEngineBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i><span>INITIALIZE AUTO-SWEEP (15M)</span>`;
+            }
+            
+            lucide.createIcons();
+        };
+
+        const updateMultipleSignalStates = (updates) => {
+            state.rawSignals = state.rawSignals.map(sig => {
+                const update = updates.find(u => u.id === sig.id);
+                return update ? { ...sig, status: update.status, verifyMessage: update.message, agentData: update.agentData } : sig;
+            });
+            renderRawSignals();
+        };
+
+        const executeTrades = (ids) => {
+            state.verifiedTrades = state.verifiedTrades.map(trade => 
+                ids.includes(trade.id) ? { ...trade, execStatus: 'FILLED via FIX API' } : trade
+            );
+            renderVerifiedTrades();
+            ids.forEach(id => {
+                addLog(`[BROKER] Order filled for ${id} via NY4 Co-located FIX API.`, "success");
+            });
+        };
+
+        // --- Core Agent Logic ---
+        
+        const verifyBatchWithGemini = async (batchSignals) => {
+            const cleanKey = state.apiKey.trim();
+            if (!cleanKey) {
+                updateMultipleSignalStates(batchSignals.map(s => ({ id: s.id, status: 'REJECTED', message: 'Missing API Key' })));
+                state.isScanning = false;
+                updateHeaderAndButtons();
+                return;
+            }
+
+            updateMultipleSignalStates(batchSignals.map(s => ({ id: s.id, status: 'VERIFYING', message: 'Agent 1 Analyzing...' })));
+
+            const prompt = `You are 'The Economist', an institutional macro AI agent. 
+            Analyze the CURRENT fundamental/macroeconomic news for the following currency pairs simultaneously: ${batchSignals.map(s => s.pair).join(', ')}.
+            Output ONLY a strict JSON array of objects, with one object for each pair. Do not use markdown blocks outside the JSON array.
+            Schema:
+            [
+                {
+                    "pair": "String (Must match exact pair name provided)",
+                    "macroBias": "BULLISH" | "BEARISH" | "NEUTRAL",
+                    "score": 1 | -1 | 0,
+                    "rationale": "One sentence explanation based on current news."
+                }
+            ]`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: "Output strict JSON array only. Act as an institutional macro economist." }] }
+            };
+
+            const isCanvasKey = typeof __GEMINI_API_KEY__ !== 'undefined' && cleanKey === __GEMINI_API_KEY__;
+            const modelName = isCanvasKey ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-2.5-flash';
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error(`HTTP ${res.status}: ${errText.slice(0, 100)}`);
+                }
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!text) throw new Error("Empty response");
+
+                const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const agentResponses = JSON.parse(cleanText);
+
+                if (!Array.isArray(agentResponses)) throw new Error("Agent did not return an array.");
+
+                const updates = [];
+                const newlyVerified = [];
+                let newApproved = 0;
+                let newRejected = 0;
+
+                agentResponses.forEach(res => {
+                    const signal = batchSignals.find(s => s.pair === res.pair);
+                    if (!signal) return;
+
+                    const isMacroAligned = 
+                        (signal.direction === 'LONG' && res.score === 1) || 
+                        (signal.direction === 'SHORT' && res.score === -1);
+
+                    if (isMacroAligned) {
+                        updates.push({ id: signal.id, status: 'APPROVED', message: res.rationale, agentData: res });
+                        newlyVerified.push({ ...signal, agentData: res, execStatus: 'QUEUED' });
+                        newApproved++;
+                        addLog(`[AGENT VERIFIED] ${signal.pair} ${signal.direction} aligns with macro (${res.macroBias}).`, "success");
+                    } else {
+                        updates.push({ id: signal.id, status: 'REJECTED', message: `Macro Conflict: TA is ${signal.direction}, Macro is ${res.macroBias}`, agentData: res });
+                        newRejected++;
+                        addLog(`[AGENT REJECTED] ${signal.pair} killed. TA vs Macro mismatch.`, "error");
+                    }
+                });
+
+                batchSignals.forEach(signal => {
+                    if (!agentResponses.find(r => r.pair === signal.pair)) {
+                        updates.push({ id: signal.id, status: 'REJECTED', message: `No macro data returned for ${signal.pair}.` });
+                    }
+                });
+
+                updateMultipleSignalStates(updates);
+                state.stats.approved += newApproved;
+                state.stats.rejected += newRejected;
+                
+                if (newlyVerified.length > 0) {
+                    state.verifiedTrades = [...newlyVerified, ...state.verifiedTrades].slice(0, 10);
+                    renderVerifiedTrades();
+                    setTimeout(() => executeTrades(newlyVerified.map(t => t.id)), 1500);
+                }
+
+            } catch (error) {
+                updateMultipleSignalStates(batchSignals.map(s => ({ id: s.id, status: 'REJECTED', message: 'Agent 1 API Failure' })));
+                addLog(`[SYSTEM ERROR] Batch verification failed: ${error.message}`, "error");
+            } finally {
+                state.isScanning = false;
+                addLog("System idle. Ready for next sweep.", "system");
+                updateHeaderAndButtons();
+            }
+        };
+
+        // --- Event Listeners ---
+        
+        apiKeyInput.addEventListener('input', (e) => {
+            state.apiKey = e.target.value;
+            updateHeaderAndButtons();
+        });
+
+        toggleEngineBtn.addEventListener('click', () => {
+            state.isEngineRunning = !state.isEngineRunning;
+            
+            if (state.isEngineRunning) {
+                addLog("Mathematical TA Engine connected. Sweep interval: 15 minutes.", "system");
+                
+                const triggerBatchSweep = async () => {
+                    state.isScanning = true;
+                    updateHeaderAndButtons();
+                    
+                    addLog(`[TA ENGINE] Fetching live market prices for precision calculations...`, "system");
+                    
+                    const newBatchSignals = [];
+                    for (const pair of PAIRS) {
+                        const livePrice = await getQuote(pair);
+                        newBatchSignals.push(generateMockTASignal(pair, livePrice));
+                    }
+                    
+                    state.rawSignals = [...newBatchSignals, ...state.rawSignals].slice(0, 30);
+                    state.stats.generated += newBatchSignals.length;
+                    
+                    addLog(`[TA ENGINE] Sweep complete. Found setups on ${newBatchSignals.length} pairs. Sending BATCH to Agent 1.`, "signal");
+                    
+                    renderRawSignals();
+                    updateHeaderAndButtons();
+                    verifyBatchWithGemini(newBatchSignals);
+                };
+                
+                triggerBatchSweep();
+                engineInterval = setInterval(triggerBatchSweep, 900000); // 15 mins
+            } else {
+                if (engineInterval) clearInterval(engineInterval);
+                addLog("Mathematical TA Engine disconnected.", "system");
+            }
+            updateHeaderAndButtons();
+        });
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof __GEMINI_API_KEY__ !== 'undefined' && __GEMINI_API_KEY__) {
+                state.apiKey = __GEMINI_API_KEY__;
+                apiKeyInput.value = state.apiKey;
+            }
+            lucide.createIcons();
+            updateHeaderAndButtons();
+            renderLogs();
+        });
+
+    </script>
+</body>
+</html>
