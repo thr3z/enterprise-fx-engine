@@ -1,4 +1,4 @@
-const CACHE_NAME = 'enterprise-fx-engine;
+const CACHE_NAME = 'enterprise-fx-v1';
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -14,8 +14,8 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // For API calls (Gemini/CurrencyAPI), go to network first, don't cache
-  if (event.request.url.includes('api') || event.request.url.includes('generativelanguage')) {
+  // Do not cache API requests (Gemini or Currency APIs) so you always get live data
+  if (event.request.url.includes('api') || event.request.url.includes('generativelanguage') || event.request.url.includes('cdn.jsdelivr.net')) {
       return; 
   }
   
