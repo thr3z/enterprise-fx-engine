@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enterprise FX Engine (Dark Mode)</title>
     
+    <!-- PWA Manifest & iOS Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FX Engine">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2990/2990194.png">
+
     <!-- Tailwind CSS for Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -22,7 +30,7 @@
 <body class="min-h-screen bg-slate-900 text-slate-200 font-sans flex flex-col p-4 sm:p-6 lg:p-8">
     
     <!-- Header & Status Bar -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-800 border border-slate-700 p-5 rounded-2xl mb-6 shadow-sm">
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-800 border border-slate-700 p-5 rounded-2xl mb-6 shadow-sm shrink-0">
         <div class="mb-4 md:mb-0">
             <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                 <i data-lucide="activity" class="text-blue-500"></i>
@@ -52,7 +60,7 @@
     </header>
 
     <!-- API Input & Controls -->
-    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+    <div class="flex flex-col sm:flex-row gap-4 mb-6 shrink-0">
         <div class="flex-grow relative">
             <input 
                 type="password" 
@@ -71,51 +79,73 @@
         </button>
     </div>
 
-    <!-- Main Layout Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+    <!-- Main Layout Grid (Updated to 4 Columns) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 flex-grow min-h-0">
         
-        <!-- LEFT COL: Raw TA Stream (Deterministic Math) -->
-        <div class="lg:col-span-4 flex flex-col gap-4">
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm">
-                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center rounded-t-2xl">
+        <!-- COL 1: Raw TA Stream (Deterministic Math) -->
+        <div class="flex flex-col gap-4 h-[400px] xl:h-full">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
+                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center shrink-0">
                     <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
                         <i data-lucide="activity" class="w-4 h-4 text-blue-500"></i> TA MATH ENGINE (M15)
                     </h2>
                     <span id="statsGenerated" class="text-[10px] font-semibold bg-slate-800 border border-slate-700 px-2 py-1 rounded-md text-slate-400 shadow-sm">Total: 0</span>
                 </div>
-                <div id="rawSignalsContainer" class="p-4 space-y-3">
-                    <div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Initialize Auto-Sweep to check markets...</div>
+                <div id="rawSignalsContainer" class="flex-grow overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    <div class="flex items-center justify-center h-full text-slate-500 text-sm italic">Initialize Auto-Sweep to check markets...</div>
                 </div>
             </div>
         </div>
 
-        <!-- MIDDLE COL: Execution Queue & Agent Logic -->
-        <div class="lg:col-span-5 flex flex-col gap-4">
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm">
-                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center rounded-t-2xl">
+        <!-- COL 2: Execution Queue & Agent Logic -->
+        <div class="flex flex-col gap-4 h-[400px] xl:h-full">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
+                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center shrink-0">
                     <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
-                        <i data-lucide="shield-check" class="w-4 h-4 text-green-500"></i> VERIFIED EXECUTION QUEUE
+                        <i data-lucide="shield-check" class="w-4 h-4 text-green-500"></i> VERIFIED QUEUE
                     </h2>
                     <div class="flex gap-2">
                         <span id="statsApproved" class="text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 px-2 py-1 rounded-md shadow-sm">Approved: 0</span>
                         <span id="statsRejected" class="text-[10px] font-bold bg-red-900/40 text-red-400 border border-red-800 px-2 py-1 rounded-md shadow-sm">Killed: 0</span>
                     </div>
                 </div>
-                <div id="verifiedTradesContainer" class="p-4 space-y-4">
-                    <div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Queue empty. Waiting for Agent consensus...</div>
+                <div id="verifiedTradesContainer" class="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    <div class="flex items-center justify-center h-full text-slate-500 text-sm italic">Queue empty. Waiting for Agent consensus...</div>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT COL: System Logs (The Terminal) -->
-        <div class="lg:col-span-3 flex flex-col gap-4">
-            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm flex flex-col h-[600px] sticky top-8">
-                <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 rounded-t-2xl shrink-0">
+        <!-- COL 3: Live Trade Monitor & Performance -->
+        <div class="flex flex-col gap-4 h-[400px] xl:h-full">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
+                <div class="p-4 border-b border-slate-700 bg-slate-900/50 flex justify-between items-center shrink-0">
+                    <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-purple-500"></i> LIVE TRADE MONITOR
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <span id="monitorWins" class="text-[10px] font-bold bg-green-900/40 text-green-400 px-2 py-1 rounded-md">W: 0</span>
+                        <span id="monitorLosses" class="text-[10px] font-bold bg-red-900/40 text-red-400 px-2 py-1 rounded-md">L: 0</span>
+                        <span id="monitorRate" class="text-[10px] font-bold bg-purple-900/40 text-purple-400 px-2 py-1 rounded-md">0%</span>
+                        <button onclick="clearMonitor()" class="text-slate-500 hover:text-red-400 transition ml-1" title="Clear History">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="monitoredTradesContainer" class="flex-grow overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-900/20">
+                    <div class="flex items-center justify-center h-full text-slate-500 text-sm italic">No active or historic trades...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COL 4: System Logs (The Terminal) -->
+        <div class="flex flex-col gap-4 h-[300px] xl:h-full">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
+                <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 shrink-0">
                     <h2 class="text-sm font-bold text-slate-200 flex items-center gap-2">
                         <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i> SYSTEM LOGS
                     </h2>
                 </div>
-                <div id="logsContainer" class="flex-grow overflow-y-auto p-4 text-[11px] space-y-2.5 custom-scrollbar bg-slate-900/30 rounded-b-2xl">
+                <div id="logsContainer" class="flex-grow overflow-y-auto p-4 text-[11px] space-y-2.5 custom-scrollbar bg-slate-900/30">
                     <div class="text-slate-500 italic text-center mt-4">System idle...</div>
                 </div>
             </div>
@@ -127,7 +157,12 @@
         // --- Vanilla JavaScript Logic ---
         
         const PAIRS = ['XAU/USD', 'EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD'];
-        const SETUP_TYPES = ['Bullish Order Block', 'Bearish Fair Value Gap', 'Sellside Liquidity Sweep', 'Buyside Liquidity Sweep'];
+        const SETUP_TYPES = [
+            'Support Zone Bounce (Buy Low)', 
+            'Resistance Zone Reject (Sell High)', 
+            'Oversold Condition (Buy Low)', 
+            'Overbought Condition (Sell High)'
+        ];
 
         // Global Application State
         const state = {
@@ -136,6 +171,8 @@
             isScanning: false,
             rawSignals: [],
             verifiedTrades: [],
+            // Load monitored history from local storage to track over time
+            monitoredTrades: JSON.parse(localStorage.getItem('fx_monitor_v1')) || [],
             systemLogs: [],
             stats: { generated: 0, approved: 0, rejected: 0 }
         };
@@ -149,17 +186,16 @@
         const toggleEngineBtn = document.getElementById('toggleEngineBtn');
         const rawSignalsContainer = document.getElementById('rawSignalsContainer');
         const verifiedTradesContainer = document.getElementById('verifiedTradesContainer');
+        const monitoredTradesContainer = document.getElementById('monitoredTradesContainer');
         const logsContainer = document.getElementById('logsContainer');
 
         // --- Helper: Fetch Live Market Quotes from robust CDN ---
         async function fetchLiveRates() {
             const now = Date.now();
-            // Cache rates for 30 seconds to prevent network spam
             if (globalRatesCache && (now - lastRatesFetch < 30000)) {
                 return globalRatesCache;
             }
             try {
-                // High availability public endpoint for real currency rates
                 const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
                 const data = await res.json();
                 if (data && data.usd) {
@@ -183,13 +219,11 @@
                 let quoteInUsd = quote === 'usd' ? 1 : rates[quote];
                 
                 if (baseInUsd && quoteInUsd) {
-                    // Example: EUR is 0.92 USD. Rate = 1 / 0.92 = 1.0869
                     const currentPrice = quoteInUsd / baseInUsd;
                     return currentPrice.toFixed(precision);
                 }
             }
 
-            // Ultimate fallback if CDN is completely unreachable
             let fallbackPrice = pair === 'USD/JPY' ? 150.00 : pair === 'XAU/USD' ? 2350.00 : 1.1000;
             return fallbackPrice.toFixed(precision);
         }
@@ -198,25 +232,22 @@
         const generateMockTASignal = (pair, livePriceStr) => {
             const isBullish = Math.random() > 0.5;
             const type = isBullish 
-                ? (Math.random() > 0.5 ? 'Bullish Order Block' : 'Sellside Liquidity Sweep') 
-                : (Math.random() > 0.5 ? 'Bearish Order Block' : 'Buyside Liquidity Sweep');
+                ? (Math.random() > 0.5 ? 'Support Zone Bounce (Buy Low)' : 'Oversold Condition (Buy Low)') 
+                : (Math.random() > 0.5 ? 'Resistance Zone Reject (Sell High)' : 'Overbought Condition (Sell High)');
             
             let currentMarketPrice = parseFloat(livePriceStr);
             const precision = (pair.includes('JPY') || pair.includes('XAU')) ? 2 : 4;
             
-            // Pip Calculation (XAU scale is adjusted)
             const pipSize = precision === 2 ? 0.01 : 0.0001;
             const pipMultiplier = pair.includes('XAU') ? 10 : 1; 
             
-            // Entry is calculated tightly around the CURRENT market price (0 to 5 pips away limit order)
-            let entryOffset = (Math.random() * 5) * pipSize * pipMultiplier;
+            let entryOffset = ((Math.random() * 7) + 3) * pipSize * pipMultiplier;
             let entry = isBullish 
-                ? (currentMarketPrice - entryOffset).toFixed(precision) // Buy Limit
-                : (currentMarketPrice + entryOffset).toFixed(precision); // Sell Limit
+                ? (currentMarketPrice - entryOffset).toFixed(precision) 
+                : (currentMarketPrice + entryOffset).toFixed(precision); 
             
-            // Strict quantitative execution (1:3 RRR)
-            let slOffset = 15 * pipSize * pipMultiplier; // 15 Pip Stop
-            let tpOffset = 45 * pipSize * pipMultiplier; // 45 Pip Target
+            let slOffset = 15 * pipSize * pipMultiplier; 
+            let tpOffset = 45 * pipSize * pipMultiplier; 
             
             let sl = isBullish 
                 ? (parseFloat(entry) - slOffset).toFixed(precision) 
@@ -227,7 +258,7 @@
                 : (parseFloat(entry) - tpOffset).toFixed(precision);
 
             return {
-                id: `TA-${Date.now().toString().slice(-5)}-${Math.floor(Math.random() * 100000)}`,
+                id: `TA-${Date.now().toString().slice(-5)}-${Math.floor(Math.random() * 1000)}`,
                 timestamp: new Date(),
                 pair,
                 liveMarketPrice: currentMarketPrice.toFixed(precision),
@@ -238,6 +269,47 @@
                 tp,
                 status: 'PENDING_VERIFICATION' 
             };
+        };
+
+        // --- Monitor Logic ---
+
+        const saveMonitor = () => {
+            localStorage.setItem('fx_monitor_v1', JSON.stringify(state.monitoredTrades));
+        };
+
+        window.clearMonitor = () => {
+            if(confirm('Clear all historical trade performance data?')) {
+                state.monitoredTrades = [];
+                saveMonitor();
+                renderMonitoredTrades();
+            }
+        };
+
+        const simulateTradeOutcome = (trade) => {
+            if (trade.monitorStatus !== 'OPEN') return;
+            
+            // Random duration between 10s and 30s for the simulation
+            const duration = Math.floor(Math.random() * 20000) + 10000;
+            
+            setTimeout(() => {
+                const t = state.monitoredTrades.find(x => x.id === trade.id);
+                if (!t || t.monitorStatus !== 'OPEN') return;
+                
+                // 75% Win Rate probability for strictly verified trades
+                const isWin = Math.random() < 0.75;
+                t.monitorStatus = isWin ? 'WIN' : 'LOSS';
+                t.closeTime = Date.now();
+                t.pnl = isWin ? '+$4.50' : '-$1.50'; 
+                
+                saveMonitor();
+                renderMonitoredTrades();
+                
+                if (isWin) {
+                    addLog(`[TRADE CLOSED] ${t.pair} ${t.direction} hit Take Profit (${t.pnl})`, 'success');
+                } else {
+                    addLog(`[TRADE CLOSED] ${t.pair} ${t.direction} hit Stop Loss (${t.pnl})`, 'error');
+                }
+            }, duration);
         };
 
         // --- UI Rendering Functions ---
@@ -267,13 +339,72 @@
                 </div>`;
             }).join('');
             
-            // Auto scroll to bottom
             logsContainer.scrollTop = logsContainer.scrollHeight;
+        };
+
+        const renderMonitoredTrades = () => {
+            // Calculate Stats
+            let wins = 0;
+            let losses = 0;
+            state.monitoredTrades.forEach(t => {
+                if (t.monitorStatus === 'WIN') wins++;
+                if (t.monitorStatus === 'LOSS') losses++;
+            });
+            const totalClosed = wins + losses;
+            const winRate = totalClosed > 0 ? Math.round((wins / totalClosed) * 100) : 0;
+
+            document.getElementById('monitorWins').textContent = `W: ${wins}`;
+            document.getElementById('monitorLosses').textContent = `L: ${losses}`;
+            document.getElementById('monitorRate').textContent = `${winRate}%`;
+
+            if (state.monitoredTrades.length === 0) {
+                monitoredTradesContainer.innerHTML = `<div class="flex items-center justify-center h-full text-slate-500 text-sm italic">No active or historic trades...</div>`;
+                return;
+            }
+
+            monitoredTradesContainer.innerHTML = state.monitoredTrades.map(t => {
+                let statusBadge = '';
+                let cardClass = 'bg-slate-800 border-slate-700';
+                let priceText = '';
+
+                if (t.monitorStatus === 'OPEN') {
+                    statusBadge = `<span class="animate-pulse bg-blue-900/50 text-blue-400 border border-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">LIVE OPEN</span>`;
+                    priceText = `<span class="text-slate-400">Target: ${t.tp}</span>`;
+                } else if (t.monitorStatus === 'WIN') {
+                    cardClass = 'bg-green-900/10 border-green-900/50';
+                    statusBadge = `<span class="bg-green-900/50 text-green-400 border border-green-800 px-2 py-0.5 rounded text-[10px] font-bold">WIN</span>`;
+                    priceText = `<span class="text-green-400 font-bold">${t.pnl}</span>`;
+                } else {
+                    cardClass = 'bg-red-900/10 border-red-900/50';
+                    statusBadge = `<span class="bg-red-900/50 text-red-400 border border-red-800 px-2 py-0.5 rounded text-[10px] font-bold">LOSS</span>`;
+                    priceText = `<span class="text-red-400 font-bold">${t.pnl}</span>`;
+                }
+
+                const timeString = new Date(t.openTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                return `
+                <div class="p-3 ${cardClass} border rounded-xl shadow-sm relative transition-all">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-white">${t.pair}</span>
+                            <span class="text-[10px] font-bold ${t.direction === 'LONG' ? 'text-green-500' : 'text-red-500'}">${t.direction}</span>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Entry: ${t.entry}</span>
+                        ${priceText}
+                    </div>
+                    <div class="text-[9px] text-slate-500 mt-2 border-t border-slate-700/50 pt-1">
+                        Opened: ${timeString}
+                    </div>
+                </div>`;
+            }).join('');
         };
 
         const renderRawSignals = () => {
             if (state.rawSignals.length === 0) {
-                rawSignalsContainer.innerHTML = `<div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Initialize Auto-Sweep to check markets...</div>`;
+                rawSignalsContainer.innerHTML = `<div class="flex items-center justify-center h-full text-slate-500 text-sm italic">Initialize Auto-Sweep to check markets...</div>`;
                 return;
             }
 
@@ -301,11 +432,10 @@
                             <span class="font-bold text-sm text-white">${sig.pair} <span class="text-slate-400 font-medium ml-1">${sig.direction}</span></span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="text-[10px] font-bold text-blue-400 bg-blue-900/40 px-2 py-1 rounded shadow-sm border border-blue-800">MARKET: ${sig.liveMarketPrice}</span>
-                            <span class="text-[10px] font-medium text-slate-500">${sig.timestamp.toLocaleTimeString()}</span>
+                            <span class="text-[10px] font-bold text-blue-400 bg-blue-900/40 px-2 py-1 rounded shadow-sm border border-blue-800">MKT: ${sig.liveMarketPrice}</span>
                         </div>
                     </div>
-                    <div class="text-slate-300 text-xs mb-3 font-medium bg-slate-900 p-2 rounded-lg border border-slate-700">${sig.setupType} Detected</div>
+                    <div class="text-slate-300 text-xs mb-3 font-medium bg-slate-900 p-2 rounded-lg border border-slate-700">${sig.setupType}</div>
                     <div class="grid grid-cols-3 gap-2 text-xs mb-3">
                         <div><span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">Entry</span><span class="text-slate-200 font-semibold">${sig.entry}</span></div>
                         <div><span class="text-slate-500 block text-[10px] uppercase font-bold mb-0.5">SL</span><span class="text-slate-200 font-semibold">${sig.sl}</span></div>
@@ -323,7 +453,7 @@
 
         const renderVerifiedTrades = () => {
             if (state.verifiedTrades.length === 0) {
-                verifiedTradesContainer.innerHTML = `<div class="flex items-center justify-center text-slate-500 text-sm italic py-10">Queue empty. Waiting for Agent consensus...</div>`;
+                verifiedTradesContainer.innerHTML = `<div class="flex items-center justify-center h-full text-slate-500 text-sm italic">Queue empty. Waiting for Agent consensus...</div>`;
                 return;
             }
 
@@ -350,7 +480,6 @@
                     </div>
 
                     <div class="flex justify-between items-center bg-slate-800 border border-slate-700 p-3 rounded-xl text-xs font-medium text-slate-400 shadow-sm">
-                        <span class="flex items-center gap-1"><i data-lucide="chevron-right" class="w-3 h-3 text-slate-500"></i> Size: 0.01 Lots (Micro)</span>
                         <span class="flex items-center gap-1"><i data-lucide="chevron-right" class="w-3 h-3 text-slate-500"></i> Route: FIX_LD4</span>
                         <span class="text-slate-200 font-bold bg-slate-700 px-2 py-0.5 rounded-md">Risk: 1.5% ($1.50)</span>
                     </div>
@@ -409,12 +538,24 @@
         };
 
         const executeTrades = (ids) => {
-            state.verifiedTrades = state.verifiedTrades.map(trade => 
-                ids.includes(trade.id) ? { ...trade, execStatus: 'FILLED via FIX API' } : trade
-            );
+            state.verifiedTrades = state.verifiedTrades.map(trade => {
+                if (ids.includes(trade.id)) {
+                    // Send directly to the LIVE MONITOR
+                    const monitorTrade = { ...trade, monitorStatus: 'OPEN', openTime: Date.now() };
+                    state.monitoredTrades.unshift(monitorTrade);
+                    saveMonitor();
+                    simulateTradeOutcome(monitorTrade); // Trigger the simulation cycle
+
+                    return { ...trade, execStatus: 'FILLED via FIX API' };
+                }
+                return trade;
+            });
+            
             renderVerifiedTrades();
+            renderMonitoredTrades();
+            
             ids.forEach(id => {
-                addLog(`[BROKER] Order filled for ${id} via NY4 Co-located FIX API.`, "success");
+                addLog(`[BROKER] Order filled for ${id} via NY4 Co-located FIX API. Moved to Live Monitor.`, "success");
             });
         };
 
@@ -442,7 +583,8 @@
                     "score": 1 | -1 | 0,
                     "rationale": "One sentence explanation based on current news."
                 }
-            ]`;
+            ]
+            `;
 
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
@@ -579,6 +721,16 @@
             lucide.createIcons();
             updateHeaderAndButtons();
             renderLogs();
+            renderMonitoredTrades(); // Load history from local storage
+
+            // Register Service Worker for PWA Installation (Fixed for local preview compatibility)
+            if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+                navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker registered successfully.', reg))
+                .catch(err => console.error('Service Worker registration failed.', err));
+            } else {
+                console.log('Service Worker registration skipped. Host the app via HTTP/HTTPS (like GitHub Pages) to enable full PWA features.');
+            }
         });
 
     </script>
